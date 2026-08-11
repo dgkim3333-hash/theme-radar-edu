@@ -1,12 +1,15 @@
 # 한국 테마 레이더 (교육용)
 
 Claude 데스크탑 Cowork 아티팩트를 브라우저에서 그대로 열 수 있게 만든 **단독 HTML 1개 파일**입니다.
-외부 의존은 Chart.js(CDN) 하나뿐이고, 시세 데이터는 파일 안에 내장되어 있습니다.
+**외부에서 불러오는 파일이 하나도 없습니다.** 차트까지 파일 안에서 직접 그리므로 오프라인에서도 그대로 뜹니다.
 
 ## 바로 열기
 
 - GitHub Pages: https://dgkim3333-hash.github.io/theme-radar-edu/
+- 설정 없이 바로 보기: [htmlpreview로 열기](https://htmlpreview.github.io/?https://github.com/dgkim3333-hash/theme-radar-edu/blob/main/index.html)
 - 소스 보기: [index.html](index.html)
+
+파일을 내려받아 더블클릭해도 동일하게 열립니다.
 
 ## 화면 구성
 
@@ -33,6 +36,12 @@ Claude 데스크탑 Cowork 아티팩트를 브라우저에서 그대로 열 수 
 
 - **Cowork 아티팩트 안에서 열 때** — `window.cowork`가 있으므로 내장 스냅샷을 무시하고 MCP를 실제 호출합니다. 실시간 순위·차트·네이버 뉴스가 모두 살아 있습니다.
 - **브라우저에서 열 때** — `window.cowork`가 없으므로 폴백 shim이 MCP 응답 형태를 그대로 흉내 냅니다. 순위·차트·등락률은 스냅샷으로 렌더되고, 뉴스는 네이버 뉴스 검색 링크로 대체됩니다.
+
+## 차트에 대해
+
+Chart.js 같은 외부 라이브러리를 쓰지 않고 **인라인 SVG로 직접 그립니다**.
+htmlpreview처럼 외부 스크립트를 실행하지 않는 환경, 사내망, 오프라인에서도 차트가 정상적으로 나옵니다.
+창 크기를 바꾸면 다시 그립니다. 선 위에 마우스를 올리면 종목명이 나옵니다(값 풍선은 없습니다).
 
 ## 알려진 제약
 
