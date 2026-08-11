@@ -1,0 +1,936 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>한국 테마 레이더 — 교육용 (오프라인 스냅샷)</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #f7f8fa; color: #1a1d23;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+    font-size: 14px; line-height: 1.5;
+  }
+  .wrap { max-width: 1560px; margin: 0 auto; padding: 20px 18px 60px; }
+  h1 { font-size: 21px; margin: 0 0 2px; }
+  .sub { color: #6b7280; font-size: 12.5px; margin-bottom: 18px; }
+  .panel { background: #fff; border: 1px solid #e6e8ec; border-radius: 14px; padding: 18px; margin-bottom: 18px; }
+  .panel h2 { font-size: 15px; margin: 0 0 14px; }
+
+  /* 2x2 map */
+  .map { position: relative; width: 100%; height: 430px; border-left: 2px solid #cbd0d8; border-bottom: 2px solid #cbd0d8; }
+  .quad { position: absolute; width: 50%; height: 50%; font-size: 11px; color: #9aa1ac; padding: 8px 10px; }
+  .q-tl { top:0; left:0; background: rgba(34,197,94,.07); border-bottom:1px dashed #e0e3e8; border-right:1px dashed #e0e3e8;}
+  .q-tr { top:0; left:50%; border-bottom:1px dashed #e0e3e8;}
+  .q-bl { top:50%; left:0; border-right:1px dashed #e0e3e8;}
+  .q-br { top:50%; left:50%; }
+  .q-tl b { color:#15803d; }
+  .axis-x { text-align:center; color:#6b7280; font-size:12px; margin-top:6px; }
+  .axis-y { position:absolute; left:-54px; top:50%; transform:rotate(-90deg); transform-origin:left; color:#6b7280; font-size:12px; white-space:nowrap; }
+  .bubble {
+    position:absolute; transform:translate(-50%,-50%); border-radius:50%;
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    color:#fff; font-weight:700; font-size:9.5px; cursor:pointer; border:2px solid #fff;
+    box-shadow:0 2px 8px rgba(0,0,0,.15); transition:transform .12s;
+    white-space:pre-line; word-break:keep-all; overflow:hidden; padding:3px; line-height:1.15;
+  }
+  .bubble:hover { transform:translate(-50%,-50%) scale(1.08); z-index:5; }
+
+  /* cards */
+  .cards { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+  @media(max-width:900px){ .cards{ grid-template-columns:1fr; } }
+  .card { background:#fff; border:1px solid #e6e8ec; border-radius:12px; padding:14px; }
+  .card .top { display:flex; justify-content:space-between; align-items:baseline; }
+  .card h3 { font-size:15px; margin:0; }
+  .score { font-size:18px; font-weight:800; }
+  .bars { margin:10px 0 8px; }
+  .bar-row { display:flex; align-items:center; gap:8px; margin:3px 0; font-size:11.5px; color:#6b7280; }
+  .bar-row .lbl { width:64px; flex:none; }
+  .bar { flex:1; height:7px; background:#eef0f3; border-radius:4px; overflow:hidden; }
+  .bar > i { display:block; height:100%; border-radius:4px; }
+
+  /* 테마 카드 1개월 가격 추이 차트 */
+  .tchart { margin:11px 0 4px; }
+  .tchart .cwrap { height:190px; position:relative; }
+  .tchart .clg { display:flex; gap:9px; flex-wrap:wrap; align-items:center; margin-top:6px; font-size:11.5px; color:#4b5563; }
+  .tchart .clg .it { display:inline-flex; align-items:center; gap:4px; }
+  .tchart .clg i.dot { width:9px; height:9px; border-radius:2px; display:inline-block; flex:none; }
+  .tchart .cst { font-size:10.5px; color:#9aa1ac; }
+  .tchart .skel { height:190px; border-radius:8px; background:linear-gradient(90deg,#f3f4f6 25%,#eceef1 37%,#f3f4f6 63%); background-size:400% 100%; animation:sk 1.3s ease infinite; }
+  @keyframes sk { 0%{background-position:100% 50%} 100%{background-position:0 50%} }
+
+  .tickers { font-size:12px; color:#374151; margin:6px 0; }
+  .tickers b { color:#111827; }
+  .catalyst { font-size:12px; color:#4b5563; background:#f3f4f6; border-radius:8px; padding:7px 9px; margin-top:8px; }
+  .etfrow { font-size:12px; color:#374151; margin:9px 0 2px; }
+  .emu { color:#9aa1ac; font-size:10.5px; }
+  .etf { display:inline-block; background:#f1f3f6; border-radius:5px; padding:2px 7px; margin:3px 5px 0 0; font-weight:700; font-size:11.5px; text-decoration:none; cursor:pointer; }
+  .etf:hover { background:#e3e7ee; }
+  .etf.up { color:#16a34a; } .etf.down { color:#dc2626; }
+  .mv-tic a { color:inherit; text-decoration:none; }
+  .mv-tic a:hover { text-decoration:underline; }
+  .news-btn { margin-top:10px; width:100%; padding:8px; border:1px solid #d4d7dd; background:#fff; border-radius:8px; cursor:pointer; font-size:12.5px; color:#1f2937; }
+  .news-btn:hover { background:#f3f4f6; }
+  .news-list { margin-top:9px; font-size:12px; }
+  .news-list a { display:block; color:#1d4ed8; text-decoration:none; margin:5px 0; line-height:1.35; }
+  .news-list a:hover { text-decoration:underline; }
+  .news-list a .en { display:block; color:#9aa1ac; font-size:10.5px; font-weight:400; margin-top:1px; }
+  .news-list .date { color:#9aa1ac; font-size:11px; }
+  .muted { color:#9aa1ac; font-size:11.5px; }
+  .toolbar { display:flex; gap:8px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+  .pri-btn { padding:9px 14px; background:#111827; color:#fff; border:none; border-radius:9px; cursor:pointer; font-size:13px; }
+  .pri-btn:disabled { opacity:.5; cursor:default; }
+  .legend { font-size:11.5px; color:#9aa1ac; }
+  .disc { font-size:11px; color:#9aa1ac; margin-top:18px; line-height:1.5; }
+
+  .movers { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+  @media(max-width:760px){ .movers{ grid-template-columns:1fr; } }
+  .mv-col { min-width:0; }
+  .mv-col h3 { font-size:13px; margin:0 0 8px; }
+  .mv-row { display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px solid #f0f1f4; font-size:12.5px; }
+  .mv-row:last-child { border-bottom:none; }
+  .mv-rank { width:22px; color:#9aa1ac; flex:none; text-align:right; }
+  .mv-tic { font-weight:700; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mv-name { flex:none; color:#6b7280; font-variant-numeric:tabular-nums; }
+  .mv-chg { width:62px; flex:none; text-align:right; font-weight:700; font-variant-numeric:tabular-nums; }
+  .up { color:#16a34a; } .down { color:#dc2626; }
+  .lev { font-size:9px; background:#fde68a; color:#92400e; border-radius:4px; padding:1px 4px; flex:none; font-weight:700; }
+  .cat { font-size:9.5px; background:#eef2ff; color:#4338ca; border-radius:4px; padding:1px 5px; flex:none; white-space:nowrap; font-weight:600; }
+  .mv-cap { font-size:11px; color:#9aa1ac; margin-top:12px; line-height:1.5; }
+  .chk { font-size:12px; color:#4b5563; display:inline-flex; align-items:center; gap:5px; cursor:pointer; }
+  .tk-in { padding:8px 10px; border:1px solid #d4d7dd; border-radius:8px; font-size:13px; width:150px; }
+  .chip { display:inline-block; width:auto !important; margin:0 6px 6px 0 !important; padding:5px 11px !important; }
+  .snapbar { background:#fffbeb; border:1px solid #fcd34d; color:#92400e; border-radius:10px; padding:10px 13px; margin-bottom:16px; font-size:12.5px; line-height:1.6; }
+  .snapbar b { color:#78350f; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+</head>
+<body>
+<div class="wrap">
+  <h1>🇰🇷 한국 테마 레이더</h1>
+  <div class="sub">거래대금 실측(KIS 국내주식 순위) 기반으로 직접 정의한 테마를 추적 · <b>테마 카드마다 대표 ETF·대표주의 최근 1개월 가격 추이</b>를 시작일=0% 기준으로 정규화해 표시 · 뉴스는 네이버 뉴스 검색(제목 클릭 시 원문) · 금액은 원 단위 풀 표기</div>
+  <div id="snapBanner"></div>
+
+  <div class="toolbar">
+    <button class="pri-btn" id="refreshAll">📰 전체 테마 오늘 뉴스 불러오기</button>
+    <span class="legend" id="status">버블·카드의 버튼으로 테마별 최신 뉴스를 확인하세요.</span>
+  </div>
+
+  <div class="panel">
+    <h2>성숙도 × 모멘텀 지도 <span class="legend">— 좌상단(초기+가속)이 핵심 관찰 구간</span></h2>
+    <div style="position:relative; padding-left:22px;">
+      <div class="axis-y">모멘텀 (가속 ↑)</div>
+      <div class="map" id="map">
+        <div class="quad q-tl"><b>① 초기 · 가속 ★</b></div>
+        <div class="quad q-tr">② 성숙 · 가속</div>
+        <div class="quad q-bl">③ 초기 · 둔화</div>
+        <div class="quad q-br">④ 성숙 · 둔화</div>
+      </div>
+      <div class="axis-x">← 초기 &nbsp;&nbsp;&nbsp; 성숙도 &nbsp;&nbsp;&nbsp; 성숙 →</div>
+    </div>
+    <div class="mv-cap">버블이 겹치지 않도록 자동으로 밀어내 배치하므로, 표시 위치는 실제 좌표에서 조금 어긋날 수 있습니다. 정확한 값은 버블에 마우스를 올리면 나옵니다.</div>
+  </div>
+
+  <div class="panel">
+    <h2>📊 등락률 상위·하위 TOP20 <span class="legend" id="crTime">— KIS 공식 순위</span></h2>
+    <div class="toolbar">
+      <button class="pri-btn" id="refreshRank">📥 순위 새로고침 (등락률·칩 등락 갱신)</button>
+      <span class="legend" id="rankStatus"></span>
+    </div>
+    <div class="movers">
+      <div class="mv-col"><h3 class="up">▲ 코스피 상승 TOP20</h3><div id="kr-cr-ks-up"></div></div>
+      <div class="mv-col"><h3 class="down">▼ 코스피 하락 TOP20</h3><div id="kr-cr-ks-dn"></div></div>
+      <div class="mv-col"><h3 class="up">▲ 코스닥 상승 TOP20</h3><div id="kr-cr-kq-up"></div></div>
+      <div class="mv-col"><h3 class="down">▼ 코스닥 하락 TOP20</h3><div id="kr-cr-kq-dn"></div></div>
+    </div>
+    <div class="mv-cap">등락률 순위에는 저유동성 종목이 섞일 수 있습니다. 테마 판단 시 거래대금 순위와 교차 확인하세요.</div>
+  </div>
+
+  <div class="panel">
+    <h2>🔍 개별 종목 시세·차트 <span class="legend">— 6자리 종목코드 또는 종목명 입력</span></h2>
+    <div class="toolbar">
+      <input id="tkInput" class="tk-in" placeholder="예: 005930">
+      <button class="pri-btn" id="qBtn">시세 조회</button>
+      <span class="legend" id="qStatus"></span>
+    </div>
+    <div id="tkChips"></div>
+    <div id="quoteCard"></div>
+    <div id="chartWrap" style="display:none; margin-top:14px; height:240px;"><canvas id="priceChart"></canvas></div>
+    <div class="mv-cap">시세·차트는 버튼을 누를 때만 호출합니다. 매매 전 증권사 공식 시세로 확인하세요. 투자 추천이 아닙니다.</div>
+  </div>
+
+  <div class="toolbar" style="margin-top:6px;">
+    <button class="pri-btn" id="refreshThemes">🎯 테마 ETF·관련주 등락 갱신</button>
+    <button class="pri-btn" id="reloadCharts">📈 1개월 차트 새로고침</button>
+    <span class="legend" id="chartStatus">카드 차트는 페이지를 열면 자동으로 불러옵니다 (6시간 캐시).</span>
+    <span class="legend" id="themeStatus">테마 카드의 ETF·관련주 등락률을 최신으로 (KIS 순위 5회 호출)</span>
+  </div>
+  <h2 style="font-size:15px; margin:6px 0 12px;">🔥 현재 Hot 테마 <span class="legend">— 지금 시장을 주도하는 주류 테마 (거래대금순 ETF·관련주)</span></h2>
+  <div class="cards" id="cardsHot"></div>
+
+  <h2 style="font-size:15px; margin:18px 0 12px;">🛰️ 미래 신규 테마 <span class="legend">— 아직 컨센서스 전인 초기 발굴 테마 · 매일 자동 갱신</span></h2>
+  <div class="cards" id="cards"></div>
+
+  <div class="disc">
+    본 화면은 투자 의사결정 보조용 정보 요약이며 특정 종목 매수·매도 추천이 아닙니다. 테마 분류·점수·성숙도·모멘텀은 정성적 판단([추정])이고,
+    거래대금·시세·순위는 한국투자증권(KIS) 공식 API 실측값입니다. 뉴스 검색 결과는 외부 출처 기준이므로 실제 투자 전 원본·공식 공시를 확인하시기 바랍니다.
+    종목 칩은 테마 이해용 예시입니다. 카드 차트는 대표 ETF·대표 관련주의 최근 1개월 종가를 시작일=0%로 정규화한 상대 추이이며, 테마 전체의 수익률이 아닙니다.
+  </div>
+</div>
+<script>
+/* =====================================================================
+   오프라인 스냅샷 + window.cowork 폴백 shim
+   - Cowork 아티팩트 안에서 열면 window.cowork 가 이미 있으므로 이 블록은 아무 일도 하지 않는다 (라이브 동작).
+   - 브라우저에서 파일을 직접 열면 window.cowork 가 없으므로, 아래 내장 스냅샷으로 같은 응답을 흉내낸다.
+   - 스냅샷 출처: 한국투자증권(KIS) 공식 API — koreaStock MCP, 조회 2026-08-11 16:35~16:38 KST
+   ===================================================================== */
+var SNAP_AT = '2026-08-11 16:38 KST';
+var SNAP_SOURCE = '한국투자증권(KIS) 공식 API · koreaStock MCP';
+var SNAP_DATES = ["20260811","20260810","20260807","20260806","20260805","20260804","20260803","20260731","20260730","20260729","20260728","20260727","20260724","20260723","20260722","20260721","20260720","20260716","20260715","20260714","20260713","20260710","20260709","20260708","20260707"];
+/* 종가 배열: 최신 → 과거 (SNAP_DATES 와 같은 순서) */
+var SNAP_PX = {
+"396500":[31800,31080,30270,31095,33895,32395,31760,34370,26440,27720,29995,35100,34450,37700,36680,37060,35285,37285,41685,37645,36575,41930,40170,38600,41375],
+"000660":[1425000,1420000,1422000,1495000,1668000,1577000,1567000,1718000,1322000,1401000,1550000,1816000,1759000,1919000,1830000,1836000,1764000,1842000,2082000,1913000,1845000,2180000,2186000,2076000,2201000],
+"487240":[35495,36255,34835,34730,36435,33110,31075,30720,25450,26894,30689,34923,35208,37992,34113,33093,31899,34188,36133,34408,34168,37293,35013,34393,37882],
+"006340":[14520,14950,13790,14400,15450,13790,13110,13000,10320,11050,13600,13980,13730,14200,12160,11840,10940,12230,13400,12750,10820,11300,9630,9920,11250],
+"009150":[1262000,1274000,1278000,1229000,1356000,1185000,1181000,1142000,879000,1029000,1114000,1325000,1326000,1448000,1345000,1310000,1275000,1277000,1413000,1260000,1289000,1584000,1493000,1479000,1648000],
+"011070":[549000,555000,552000,554000,601000,525000,513000,514000,424000,458000,514000,614000,625000,679000,647000,629000,602000,668000,688000,641000,661000,742000,741000,763000,814000],
+"010170":[13450,14040,11460,11070,12070,10180,9250,8530,7160,7450,8450,9740,9920,10840,10090,9860,9460,10300,11680,11050,10910,12600,10650,10340,10960],
+"017900":[8690,8910,7810,6790,7060,5820,5430,5190,4365,4500,5120,5670,5700,6060,5900,5720,5480,5810,6490,6060,6060,6700,5640,5230,5690],
+"455850":[22665,22265,20380,20885,21570,20715,19880,20305,16115,17225,18945,21950,21440,23615,22975,23670,23585,25905,27975,25200,24800,25835,23530,22150,23940],
+"036930":[162400,144800,127800,133400,142900,136000,127800,124500,98300,116100,128800,149900,141000,163900,162000,169200,167900,187900,209500,192600,182500,191900,178400,160000,175600],
+"457990":[37780,38230,36970,35535,35735,33200,30560,30505,27965,27340,29590,33045,37530,39015,32670,31845,31385,31760,34115,31785,33610,33280,31500,30845,33165],
+"475150":[51100,51300,50500,55000,57700,55800,46550,45450,41800,43450,48700,57100,80900,80600,62000,55900,55900,52000,53300,48800,48050,42850,42500,41200,42900],
+"244580":[9315,9315,8730,8710,8545,8475,7740,7400,6920,7080,7595,7950,7805,7950,7540,7685,7850,8170,8350,7890,8165,8480,8470,8370,8825],
+"196170":[327500,348000,305000,293500,277000,267000,244301,237376,215062,217370,228142,240069,231220,235837,206213,210060,207367,212753,221987,215062,243531,249302,230835,241223,259690],
+"445290":[31000,31075,30140,30625,31280,30025,28950,28500,25000,25890,26489,29183,28503,31182,29988,28214,27149,28643,30238,28553,29188,31038,29788,29888,31417],
+"439960":[16940,18160,17130,18460,19000,17980,17880,14740,13470,15920,15120,14320,14310,16450,17570,13520,10400,11090,12100,11440,11700,12830,12210,12150,12860],
+"365000":[3930,3865,3745,3830,3860,3835,3580,3565,3335,3390,3570,3820,3680,3850,3520,3470,3415,3565,3590,3435,3545,3765,3510,3630,3725],
+"035420":[214000,211500,210000,226000,229000,226500,207500,208000,194700,201500,210000,225000,207500,220000,196900,193000,185900,190000,189600,183200,188000,191300,184400,192700,197200],
+"347850":[60900,65700,57500,55700,53100,64800,56700,50400,45700,48650,55500,59000,59600,64000,59000,61000,64300,68700,76000,71600,77000,84300,86600,82200,85300],
+"448570":[28595,28415,28480,28220,29270,28200,27870,29760,25320,25460,26845,29595,29805,30785,30015,29545,28780,30145,31610,29990,30085,31970,30790,31195,32355],
+"477850":[31150,32850,29050,31900,29800,22950,20000,19990,19500,23950,23500,26750,24250,23450,22600,19660,21200,26200,30150,27950,24600,29600,29650,27100,24500],
+"117700":[6705,6695,6500,6605,6520,6230,5735,5575,5110,5180,5668,6216,6231,6371,5808,5618,5474,5763,5952,5783,5877,6281,5892,5922,6376],
+"047040":[17320,17030,16410,16870,16230,15200,13300,12780,11200,12020,13430,15180,15300,16340,15270,14800,14540,15150,16240,15830,16010,17450,16040,15830,16820],
+"228790":[4280,4140,4165,4140,3930,3920,3720,3680,3695,3770,3770,3860,3660,3735,3565,3650,3580,3740,3670,3635,3780,3690,3630,3785,3900],
+"278470":[385500,387000,384500,378000,357500,359500,338000,320000,315000,325000,333500,354500,354000,370000,357500,365000,368000,393000,385500,375000,380000,375000,365500,385500,410000],
+"091170":[15950,16135,16600,16170,15795,15720,15750,15660,15495,15075,15368,16076,15812,15836,15846,15846,15782,16449,16434,16290,16379,16295,15388,15637,16036],
+"032830":[289500,280500,275500,287500,294000,278000,287500,311500,264000,265500,285000,311500,318000,329500,320000,316000,301500,331000,337500,317000,326000,340500,326000,346000,375000],
+"091180":[29195,29550,29200,29225,29170,28285,28225,27950,26035,25789,26292,28106,28195,30800,29662,28598,28195,29597,29677,28593,29761,30592,29443,30666,31039],
+"005380":[403000,408000,395500,400000,404500,392500,393000,388000,351000,353500,364000,403000,401000,432000,418000,399000,399000,425000,434000,424500,444000,457500,445500,462500,479500],
+"434730":[57440,58490,56860,57010,58130,54405,51155,50825,43680,45000,49835,55365,56030,58735,53970,52590,50900,54180,56125,54130,54780,58980,55435,55350,60490],
+"034020":[77900,79900,77100,76400,77000,73000,67700,67100,60200,60800,64700,70900,72100,73200,69200,66800,64800,69700,73000,70900,73200,78100,73200,74000,81600],
+"305720":[14180,14590,14000,13240,13120,13010,12305,12785,12055,11615,12210,13315,13275,14025,12805,12790,12715,13450,13825,13010,13435,13615,12850,12870,13595],
+"006400":[459500,481500,459000,427000,429000,419500,389500,397000,358500,364000,382000,431000,428000,467000,419000,416500,401000,434500,454000,427500,440000,434000,401500,412000,445000],
+"466920":[29400,30650,29500,29450,29780,28360,27365,28170,26465,25445,27100,29435,29240,30125,27730,26980,26990,28500,27595,26605,27660,28350,27400,27950,30000],
+"329180":[503000,532000,506000,507000,509000,483000,470500,481000,448000,434000,451000,486500,485500,498000,464500,451500,448500,484000,471000,466000,487500,504000,507000,517000,552000],
+"228800":[2635,2625,2610,2605,2585,2535,2485,2465,2435,2410,2460,2550,2525,2550,2465,2465,2470,2555,2570,2640,2710,2760,2695,2785,2895],
+"003490":[26650,26850,27150,27500,26900,26100,26200,25900,24650,24800,25250,26450,25450,25750,24900,25350,25350,26500,26650,26500,25850,26750,26700,28150,29150],
+"103140":[83500,86600,83600,83800,80700,70500,67900,71200,59900,57700,60100,64000,68300,65200,61400,59800,60000,62100,62400,60700,62800,65100,61500,62500,65900],
+"005930":[239500,230000,231000,230500,246000,240000,239500,262500,207000,208500,220000,254000,249500,270000,260500,259000,244000,255000,279500,263000,254500,285000,278000,277500,296000]
+};
+/* [rank, code, name, price, change_rate] */
+var SNAP_RANK = {
+"change_rate|KOSPI|top":[[1,"001210","금호전기",4080,29.94],[2,"002995","금호건설우",21950,29.88],[3,"002990","금호건설",11490,29.98],[4,"005360","모나미",1929,19.22],[5,"181710","NHN",54200,29.82],[6,"003350","한국화장품제조",10340,14.63],[7,"003010","혜인",7080,19.39],[8,"019680","대교",1150,11.65],[9,"058730","다스코",3650,10.27],[10,"005430","한국공항",93200,0.87],[11,"089860","롯데렌탈",45000,5.14],[12,"090460","비에이치",18120,16.83],[13,"009830","한화솔루션",36350,3.12],[14,"004440","삼일씨엔에스",5310,9.6],[15,"011300","우성머티리얼스",3690,9.66],[16,"001820","삼화콘덴서",84500,4.06],[17,"004710","한솔테크닉스",7860,6.65],[18,"002070","비비안",6120,5.88],[19,"093370","후성",10640,4.01],[20,"336260","두산퓨얼셀",35500,6.45]],
+"change_rate|KOSPI|bottom":[[1,"004870","티웨이홀딩스",1292,5.9],[2,"084670","동양고속",26750,1.71],[3,"002820","SUN&L",1967,-13.54],[4,"000650","천일고속",159600,5.35],[5,"047810","한국항공우주",135500,-12.07],[6,"013360","일성건설",1611,7.54],[7,"015260","에이엔피",318,-14.97],[8,"002070","비비안",6120,5.88],[9,"011330","유니켐",5180,-9.91],[10,"210980","SK디앤디",4870,-4.51],[11,"001260","남광토건",8210,6.62],[12,"006340","대원전선",14520,-2.88],[13,"020120","키다리스튜디오",3605,-4.38],[14,"005725","넥센우",4330,0.7],[15,"003720","삼영",7420,-3.39],[16,"003680","한성기업",6490,4.17],[17,"001290","상상인증권",1090,-9.54],[18,"123690","한국화장품",6770,2.27],[19,"001820","삼화콘덴서",84500,4.06],[20,"079550","LIG디펜스앤에어로스페이스",760000,-7.65]],
+"change_rate|KOSDAQ|top":[[1,"226340","본느",8060,30],[2,"126730","코칩",20000,29.7],[3,"079650","서산",5240,29.86],[4,"228340","동양파일",3190,29.94],[5,"002680","한탑",2150,29.99],[6,"148780","비큐AI",4930,13.46],[7,"091590","남화토건",5680,29.98],[8,"096690","에이루트",7100,24.34],[9,"119830","아이텍",6530,23.91],[10,"290660","다이나믹솔루션",1892,24.07],[11,"457600","벡트",3935,18.52],[12,"331520","밸로프",2780,23.56],[13,"095910","에스에너지",829,20.32],[14,"198440","강동씨앤엘",1354,16.52],[15,"039310","세중",1493,18.68],[16,"111710","남화산업",3410,17.99],[17,"066980","한성크린텍",1749,16.52],[18,"382800","지앤비에스 에코",5560,16.56],[19,"189330","씨이랩",16880,22.23],[20,"187420","HLB제넥스",1988,12.32]],
+"change_rate|KOSDAQ|bottom":[[1,"228670","레이",5530,-3.15],[2,"290560","파라택시스이더리움",1107,-0.45],[3,"418620","E8",897,-9.76],[4,"204840","지엘팜텍",4230,3.93],[5,"240600","유진테크놀로지",2075,5.6],[6,"140430","카티스",1940,5.38],[7,"126880","제이엔케이글로벌",2930,7.13],[8,"429270","시지트로닉스",3890,9.89],[9,"377220","프롬바이오",3685,10.66],[10,"406820","뷰티스킨",2020,4.45],[11,"162300","신스틸",1915,-3.58],[12,"104200","NHN벅스",2960,6.67],[13,"021040","대호특수강",1043,-6.88],[14,"148780","비큐AI",4930,13.46],[15,"382840","원준",5150,2.39],[16,"354200","엔젠바이오",2275,13.92],[17,"042940","상지건설",6360,2.42],[18,"457370","한켐",8220,8.73],[19,"228850","레이언스",5890,-10.49],[20,"037370","EG",3800,10.95]],
+"trading_value|KOSPI|top":[[1,"005930","삼성전자",239500,4.13],[2,"000660","SK하이닉스",1425000,0.35],[3,"009150","삼성전기",1262000,-0.94],[4,"402340","SK스퀘어",945000,-0.42],[5,"005935","삼성전자우",180200,4.77],[6,"009830","한화솔루션",36350,3.12],[7,"006340","대원전선",14520,-2.88],[8,"001820","삼화콘덴서",84500,4.06],[9,"068270","셀트리온",210500,4.73],[10,"105560","KB금융",166600,-2.97],[11,"012450","한화에어로스페이스",1098000,-4.69],[12,"475150","SK이터닉스",51100,-0.39],[13,"006400","삼성SDI",459500,-4.57],[14,"066570","LG전자",181700,-4.37],[15,"002990","금호건설",11490,29.98],[16,"035420","NAVER",214000,1.18],[17,"006360","GS건설",34750,-0.43],[18,"005380","현대차",403000,-1.23],[19,"329180","HD현대중공업",503000,-5.45],[20,"028260","삼성물산",344500,2.53]],
+"trading_value|KOSDAQ|top":[[1,"036930","주성엔지니어링",162400,12.15],[2,"080220","제주반도체",90400,3.08],[3,"196170","알테오젠",327500,-5.89],[4,"010170","대한광통신",13450,-4.2],[5,"058610","에스피지",114000,6.15],[6,"240810","원익IPS",104700,6.4],[7,"222800","심텍",113900,-1.73],[8,"347850","디앤디파마텍",60900,-7.31],[9,"226340","본느",8060,30],[10,"086520","에코프로",90300,-3.42],[11,"214450","파마리서치",417000,1.71],[12,"241710","코스메카코리아",109400,15.16],[13,"403870","HPSP",38400,3.92],[14,"126730","코칩",20000,29.7],[15,"108490","로보티즈",243500,-1.42],[16,"277810","레인보우로보틱스",480000,-1.84],[17,"000250","삼천당제약",191700,1.54],[18,"095610","테스",146000,2.38],[19,"439960","코스모로보틱스",16940,-6.72],[20,"059120","아진엑스텍",7450,8.28]],
+"volume|ALL|top":[[1,"252670","KODEX 200선물인버스2X",94,-2.08],[2,"114800","KODEX 인버스",1126,-0.97],[3,"252710","TIGER 200선물인버스2X",103,-1.9],[4,"233740","KODEX 코스닥150레버리지",7750,0],[5,"251340","KODEX 코스닥150선물인버스",2305,-0.22],[6,"462330","KODEX 2차전지산업레버리지",988,-5.45],[7,"Q530107","삼성 인버스 2X 코스닥150 선물 ETN",1649,0.24],[8,"229200","KODEX 코스닥150",14780,0],[9,"0193T0","KODEX SK하이닉스단일종목레버리지",7435,0.68],[10,"005930","삼성전자",239500,4.13],[11,"0195S0","TIGER SK하이닉스단일종목레버리지",6305,1.12],[12,"0167A0","SOL AI반도체TOP2플러스",15715,1],[13,"360750","TIGER 미국S&P500",27215,-0.22],[14,"006340","대원전선",14520,-2.88],[15,"122630","KODEX 레버리지",92580,1.99],[16,"010170","대한광통신",13450,-4.2],[17,"226340","본느",8060,30],[18,"0197X0","SOL SK하이닉스선물단일종목인버스2X",10980,-0.9],[19,"0193W0","KODEX 삼성전자단일종목레버리지",10400,7.6],[20,"002990","금호건설",11490,29.98]]
+};
+var IS_SNAPSHOT = !(window.cowork && typeof window.cowork.callMcpTool === 'function');
+if (IS_SNAPSHOT) {
+  window.cowork = {
+    callMcpTool: function(name, args){
+      return new Promise(function(resolve){
+        args = args || {};
+        if (name.indexOf('market_get_movers') >= 0){
+          var key = (args.ranking_type||'') + '|' + (args.market||'ALL') + '|' + (args.direction||'top');
+          var raw = SNAP_RANK[key];
+          if (!raw) return resolve({ isError:true, content:[{text:'{}'}] });
+          var items = raw.map(function(r){
+            return { rank:r[0], stock_code:r[1], name:r[2], price:r[3], change_rate:r[4] };
+          });
+          return resolve({ structuredContent:{ ok:true, data:{ items:items } } });
+        }
+        if (name.indexOf('stock_get_price_history') >= 0){
+          var c = SNAP_PX[String(args.stock_code||'').trim()];
+          if (!c) return resolve({ isError:true, content:[{text:'{}'}] });
+          var rows = c.map(function(v,i){ return { date:SNAP_DATES[i], close:v }; });
+          return resolve({ structuredContent:{ ok:true, data:{ rows:rows } } });
+        }
+        /* 시세 단건·뉴스는 스냅샷에 담지 않음 — 아래 패치 스크립트가 안내 문구로 대체 */
+        return resolve({ isError:true, content:[{text:'{}'}] });
+      });
+    }
+  };
+}
+</script>
+<script>
+// ===== 커넥터 설정 (다른 계정에서 쓸 때 이 값만 본인 것으로 교체) =====
+// 이 화면은 PlayMCP 커넥터 하나로 돕니다. 도구함에 「한국 주식 정보」(시세·순위)와
+// 「네이버 검색 mcp」(뉴스) 두 개를 담아야 합니다. 서버 ID는 둘 다 같습니다.
+const KR_SERVER = 'b68f9e48-afcd-44fc-b9e2-15b50d00b660'; // koreaStock(KIS) 커넥터 서버 ID
+// =====================================================================
+/* THEMES_START (이 블록은 매일 자동 갱신됨 — 마커 사이를 통째로 교체) */
+const THEMES = [
+  { id:'sovereign-ai-kr', name:'소버린 AI·국산 LLM', score:15, maturity:35, momentum:68, color:'#16a34a',
+    bars:{신선도:4,자금신호:4,촉매강도:4,모멘텀:3},
+    tickers:'NAVER, SK텔레콤 (거래대금순)',
+    catalyst:'촉매: 정부 독자 AI 파운데이션 모델 4강 글로벌 공개 경쟁 돌입·통신 3사 AI 데이터센터 조 단위 투자 (2026-08-04)',
+    etfs:[{tk:'365000',nm:'TIGER 인터넷TOP10',chg:'—'},{tk:'0105D0',nm:'SOL 한국AI소프트웨어',chg:'—'}],
+    stocks:[{tk:'035420',nm:'NAVER',chg:'—'},{tk:'017670',nm:'SK텔레콤',chg:'—'}],
+    query:'소버린 AI 국산 LLM 파운데이션 모델' },
+  { id:'obesity-drug-kr', name:'비만·대사 신약', score:12, maturity:30, momentum:25, color:'#2563eb',
+    bars:{신선도:4,자금신호:4,촉매강도:3,모멘텀:1},
+    tickers:'디앤디파마텍 (거래대금 297,031,727,750원)',
+    catalyst:'촉매: 화이자, 디앤디파마텍 경구 비만약 MET-224o 임상 중단 — 주가 급락 속 거래대금 코스닥 2위 (2026-08-05)',
+    etfs:[],
+    stocks:[{tk:'347850',nm:'디앤디파마텍',chg:'—'}],
+    query:'비만치료제 GLP-1 경구 신약' },
+  { id:'physical-ai-kr', name:'AI 소프트웨어·피지컬AI', score:16, maturity:15, momentum:80, color:'#7c3aed',
+    bars:{신선도:5,자금신호:3,촉매강도:4,모멘텀:4},
+    tickers:'마키나락스, 뉴엔AI, 비큐AI (예시)',
+    catalyst:'촉매: 마키나락스, HD한국조선해양 용접로봇 피지컬AI 프로젝트 부각 — 상한가 (2026-08-05)',
+    etfs:[{tk:'448570',nm:'FOCUS AI코리아액티브',chg:'—'},{tk:'365040',nm:'TIGER AI코리아그로스액티브',chg:'—'}],
+    stocks:[{tk:'477850',nm:'마키나락스',chg:'—'},{tk:'463020',nm:'뉴엔AI',chg:'—'},{tk:'148780',nm:'비큐AI',chg:'—'},{tk:'051160',nm:'지어소프트',chg:'—'}],
+    query:'피지컬AI 산업용 AI 소프트웨어 마키나락스' },
+  { id:'build-kr', name:'건설·도시정비', score:12, maturity:50, momentum:55, color:'#db2777',
+    bars:{신선도:3,자금신호:3,촉매강도:3,모멘텀:3},
+    tickers:'대우건설, GS건설 (거래대금순)',
+    catalyst:'촉매: 대형 건설사 상반기 실적 개선·주택 매출 반등 전망, 대우건설 잠정실적 발표 (2026-08-04)',
+    etfs:[{tk:'117700',nm:'KODEX 건설',chg:'—'},{tk:'139220',nm:'TIGER 200 건설',chg:'—'}],
+    stocks:[{tk:'047040',nm:'대우건설',chg:'—'},{tk:'006360',nm:'GS건설',chg:'—'}],
+    query:'건설주 주택공급 도시정비 수주' },
+  { id:'beauty-kr', name:'K-뷰티·화장품', score:13, maturity:45, momentum:58, color:'#ea580c',
+    bars:{신선도:3,자금신호:3,촉매강도:4,모멘텀:3},
+    tickers:'에이피알 (거래대금 189,958,416,500원)',
+    catalyst:'촉매: 에이피알 2분기 영업이익 190,600,000,000원 사상 최대 — 미국 이어 유럽 고성장, 연매출 3조 목표 (2026-08-05)',
+    etfs:[{tk:'228790',nm:'TIGER 화장품',chg:'—'},{tk:'0008T0',nm:'SOL 화장품TOP3플러스',chg:'—'}],
+    stocks:[{tk:'278470',nm:'에이피알',chg:'—'}],
+    query:'K뷰티 화장품 수출 실적' },
+  { id:'finance-kr', name:'금융 밸류업', score:11, maturity:55, momentum:50, color:'#0891b2',
+    bars:{신선도:2,자금신호:3,촉매강도:3,모멘텀:3},
+    tickers:'삼성생명, KB금융 (거래대금순)',
+    catalyst:'촉매: 상법 개정·밸류업 정책에 4대 금융지주 상반기 배당 급증 — KB금융 연 3,700,000,000,000원 주주환원 (2026-08-04)',
+    etfs:[{tk:'091170',nm:'KODEX 은행',chg:'—'}],
+    stocks:[{tk:'032830',nm:'삼성생명',chg:'—'},{tk:'105560',nm:'KB금융',chg:'—'}],
+    query:'금융지주 밸류업 주주환원 배당' },
+  { id:'auto-kr', name:'자동차·부품', score:11, maturity:58, momentum:45, color:'#ca8a04',
+    bars:{신선도:2,자금신호:3,촉매강도:3,모멘텀:3},
+    tickers:'현대차, 금호타이어 (거래대금순)',
+    catalyst:'촉매: 기아 美 신공장 HMGMA 가동·관세 15% 대응 가격 방어 (2026-08-05)',
+    etfs:[{tk:'091180',nm:'KODEX 자동차',chg:'—'}],
+    stocks:[{tk:'005380',nm:'현대차',chg:'—'},{tk:'073240',nm:'금호타이어',chg:'—'}],
+    query:'현대차 기아 미국 관세 자동차' },
+  { id:'nuclear-kr', name:'원전·SMR', score:13, maturity:55, momentum:60, color:'#475569',
+    bars:{신선도:3,자금신호:3,촉매강도:4,모멘텀:3},
+    tickers:'두산에너빌리티, 우리기술 (거래대금순)',
+    catalyst:'촉매: SMR·MMR 국가전략기술 지정, 두산에너빌리티 맥더모트와 AI 데이터센터 전력시장 공략 (2026-08-05)',
+    etfs:[{tk:'434730',nm:'HANARO 원자력iSelect',chg:'—'},{tk:'433500',nm:'ACE 원자력TOP10',chg:'—'},{tk:'0098F0',nm:'KODEX 원자력SMR',chg:'—'}],
+    stocks:[{tk:'034020',nm:'두산에너빌리티',chg:'—'},{tk:'032820',nm:'우리기술',chg:'—'}],
+    query:'원전 SMR 국가전략기술 수주' },
+  { id:'battery-kr', name:'2차전지·ESS', score:12, maturity:55, momentum:48, color:'#65a30d',
+    bars:{신선도:3,자금신호:3,촉매강도:3,모멘텀:3},
+    tickers:'삼성SDI, 에코프로, 에코프로비엠 (거래대금순)',
+    catalyst:'촉매: 한국판 IRA 세제지원·ESS 수요 성장에 2차전지 2분기 깜짝 실적 (2026-08-04)',
+    etfs:[{tk:'305720',nm:'KODEX 2차전지산업',chg:'—'},{tk:'465330',nm:'RISE 2차전지TOP10',chg:'—'}],
+    stocks:[{tk:'006400',nm:'삼성SDI',chg:'—'},{tk:'086520',nm:'에코프로',chg:'—'},{tk:'247540',nm:'에코프로비엠',chg:'—'}],
+    query:'2차전지 ESS 배터리 수요' },
+  { id:'ship-kr', name:'조선·함정 MRO', score:12, maturity:58, momentum:55, color:'#9333ea',
+    bars:{신선도:2,자금신호:3,촉매강도:4,모멘텀:3},
+    tickers:'HD현대중공업 (거래대금 74,570,131,750원)',
+    catalyst:'촉매: 백악관, 미 군함 해외 건조 승인 정식 요청 — K조선 수주 기대 (2026-08-05)',
+    etfs:[{tk:'466920',nm:'SOL 조선TOP3플러스',chg:'—'},{tk:'0115D0',nm:'KODEX 조선TOP10',chg:'—'},{tk:'494670',nm:'TIGER 조선TOP10',chg:'—'}],
+    stocks:[{tk:'329180',nm:'HD현대중공업',chg:'—'}],
+    query:'조선 함정 MRO 미 해군 수주' },
+  { id:'air-kr', name:'항공·여행', score:9, maturity:55, momentum:40, color:'#0d9488',
+    bars:{신선도:2,자금신호:2,촉매강도:3,모멘텀:2},
+    tickers:'대한항공 (거래대금 76,531,536,100원)',
+    catalyst:'촉매: 대한항공, 美 아처와 군용 AAM 협력·3분기 영업이익 개선 전망 (2026-08-05)',
+    etfs:[{tk:'228800',nm:'TIGER 여행레저',chg:'—'},{tk:'388280',nm:'RISE K엔터&여행레저',chg:'—'}],
+    stocks:[{tk:'003490',nm:'대한항공',chg:'—'}],
+    query:'대한항공 항공 여객 실적' },
+  { id:'copper-kr', name:'구리·비철금속', score:12, maturity:40, momentum:55, color:'#c026d3',
+    bars:{신선도:3,자금신호:3,촉매강도:3,모멘텀:3},
+    tickers:'풍산 (거래대금 21,977,153,800원)',
+    catalyst:'촉매: 풍산 2분기 어닝서프라이즈·구리가 강세 — "구리 없인 데이터센터도 없다" (2026-08-04)',
+    etfs:[],
+    stocks:[{tk:'103140',nm:'풍산',chg:'—'}],
+    query:'구리 가격 풍산 비철금속' },
+];
+/* THEMES_END */
+
+const HOT_THEMES = [
+  { id:'ai-semi-kr', name:'AI 반도체·HBM', score:17, maturity:80, momentum:90, color:'#2563eb', hot:true,
+    bars:{신선도:2,자금신호:5,촉매강도:5,모멘텀:5},
+    tickers:'SK하이닉스, 삼성전자, SK스퀘어 (거래대금순)',
+    catalyst:'촉매: 빅테크 호실적·내년 HBM 수요 1.8배 확대 전망, SK하이닉스·샌디스크 HBF 표준 공개 (2026-08-05)',
+    etfs:[{tk:'396500',nm:'TIGER 반도체TOP10',chg:'—'},{tk:'0167A0',nm:'SOL AI반도체TOP2플러스',chg:'—'},{tk:'395160',nm:'KODEX AI반도체TOP2플러스',chg:'—'}],
+    stocks:[{tk:'000660',nm:'SK하이닉스',chg:'—'},{tk:'005930',nm:'삼성전자',chg:'—'},{tk:'402340',nm:'SK스퀘어',chg:'—'},{tk:'080220',nm:'제주반도체',chg:'—'}],
+    query:'SK하이닉스 HBM 반도체' },
+  { id:'power-cable-kr', name:'전력기기·전선', score:17, maturity:65, momentum:85, color:'#0891b2', hot:true,
+    bars:{신선도:3,자금신호:5,촉매강도:4,모멘텀:5},
+    tickers:'대원전선, 효성중공업, LS ELECTRIC (거래대금순)',
+    catalyst:'촉매: AI 데이터센터 전력망 투자 확대로 전선주 급등 — 대원전선 +13%대·효성중공업 +10%대 (2026-08-05)',
+    etfs:[{tk:'487240',nm:'KODEX AI전력핵심설비',chg:'—'},{tk:'491820',nm:'HANARO 전력설비투자',chg:'—'},{tk:'0101N0',nm:'RISE AI전력인프라',chg:'—'}],
+    stocks:[{tk:'006340',nm:'대원전선',chg:'—'},{tk:'298040',nm:'효성중공업',chg:'—'},{tk:'010120',nm:'LS ELECTRIC',chg:'—'},{tk:'043260',nm:'성호전자',chg:'—'},{tk:'001440',nm:'대한전선',chg:'—'},{tk:'267260',nm:'HD현대일렉트릭',chg:'—'},{tk:'119850',nm:'지엔씨에너지',chg:'—'}],
+    query:'전력기기 변압기 전선 전력망' },
+  { id:'substrate-camera-kr', name:'AI 기판·카메라모듈', score:19, maturity:62, momentum:88, color:'#db2777', hot:true,
+    bars:{신선도:4,자금신호:5,촉매강도:5,모멘텀:5},
+    tickers:'삼성전기, LG이노텍, 대덕전자 (거래대금순)',
+    catalyst:'촉매: 테슬라 로보택시 카메라 공급 소식에 삼성전기·LG이노텍 10%대 급등, 美 중국산 로봇부품 수출 제한 (2026-08-05)',
+    etfs:[],
+    stocks:[{tk:'009150',nm:'삼성전기',chg:'—'},{tk:'011070',nm:'LG이노텍',chg:'—'},{tk:'353200',nm:'대덕전자',chg:'—'},{tk:'222800',nm:'심텍',chg:'—'},{tk:'332570',nm:'PS일렉트로닉스',chg:'—'},{tk:'219130',nm:'타이거일렉',chg:'—'}],
+    query:'삼성전기 LG이노텍 기판 카메라모듈' },
+  { id:'optical-kr', name:'광통신·광모듈', score:18, maturity:60, momentum:86, color:'#7c3aed', hot:true,
+    bars:{신선도:4,자금신호:4,촉매강도:5,모멘텀:5},
+    tickers:'대한광통신, 빛과전자, RFHIC (거래대금순)',
+    catalyst:'촉매: 美 중국산 광트랜시버 퇴출 추진 — 빛과전자 +29%·대한광통신 +20% 등 광통신주 동반 급등 (2026-08-05)',
+    etfs:[],
+    stocks:[{tk:'010170',nm:'대한광통신',chg:'—'},{tk:'017900',nm:'광전자',chg:'—'},{tk:'069540',nm:'빛과전자',chg:'—'},{tk:'218410',nm:'RFHIC',chg:'—'},{tk:'072950',nm:'빛샘전자',chg:'—'},{tk:'049080',nm:'기가레인',chg:'—'}],
+    query:'광통신 광모듈 광트랜시버' },
+  { id:'semi-equip-kr', name:'반도체 장비·소재', score:15, maturity:68, momentum:78, color:'#475569', hot:true,
+    bars:{신선도:3,자금신호:4,촉매강도:4,모멘텀:4},
+    tickers:'주성엔지니어링, 원익IPS, HPSP (거래대금순)',
+    catalyst:'촉매: AI 메모리 선단공정 투자 기대에 장비주 무더기 랠리 — 테스·엠케이전자 등 강세 (2026-08-05)',
+    etfs:[{tk:'455850',nm:'SOL AI반도체소부장',chg:'—'}],
+    stocks:[{tk:'036930',nm:'주성엔지니어링',chg:'—'},{tk:'240810',nm:'원익IPS',chg:'—'},{tk:'403870',nm:'HPSP',chg:'—'},{tk:'095610',nm:'테스',chg:'—'},{tk:'319660',nm:'피에스케이',chg:'—'},{tk:'033160',nm:'엠케이전자',chg:'—'},{tk:'089970',nm:'브이엠',chg:'—'}],
+    query:'반도체 장비주 수주 투자' },
+  { id:'solar-kr', name:'태양광·신재생에너지', score:15, maturity:62, momentum:76, color:'#ca8a04', hot:true,
+    bars:{신선도:3,자금신호:4,촉매강도:4,모멘텀:4},
+    tickers:'SK이터닉스, 한화솔루션, OCI홀딩스 (거래대금순)',
+    catalyst:'촉매: 한화솔루션 김동관 부회장 유상증자 참여·美 태양광 소재 관세 부과 검토 (2026-08-05)',
+    etfs:[{tk:'457990',nm:'PLUS 태양광&ESS',chg:'—'}],
+    stocks:[{tk:'475150',nm:'SK이터닉스',chg:'—'},{tk:'009830',nm:'한화솔루션',chg:'—'},{tk:'010060',nm:'OCI홀딩스',chg:'—'}],
+    query:'태양광 신재생에너지 한화솔루션' },
+  { id:'bio-kr', name:'바이오·기술수출', score:14, maturity:72, momentum:62, color:'#16a34a', hot:true,
+    bars:{신선도:3,자금신호:4,촉매강도:4,모멘텀:3},
+    tickers:'알테오젠, 셀트리온, 파마리서치 (거래대금순)',
+    catalyst:'촉매: 알테오젠, 글로벌 제약사와 520,000,000,000원 규모 기술수출 계약 (2026-08-05)',
+    etfs:[{tk:'244580',nm:'KODEX 바이오',chg:'—'},{tk:'462900',nm:'KoAct 바이오헬스케어액티브',chg:'—'},{tk:'0000Z0',nm:'RISE 바이오TOP10액티브',chg:'—'}],
+    stocks:[{tk:'196170',nm:'알테오젠',chg:'—'},{tk:'068270',nm:'셀트리온',chg:'—'},{tk:'214450',nm:'파마리서치',chg:'—'},{tk:'141080',nm:'리가켐바이오',chg:'—'}],
+    query:'알테오젠 기술수출 바이오' },
+  { id:'robot-kr', name:'로봇·물류자동화', score:13, maturity:65, momentum:60, color:'#ea580c', hot:true,
+    bars:{신선도:3,자금신호:3,촉매강도:4,모멘텀:3},
+    tickers:'코스모로보틱스, 레인보우로보틱스 (거래대금순)',
+    catalyst:'촉매: 美 중국산 로봇 수입 제한에 국내 로봇주 7%대 급등, 삼성 로봇 투자 기대 (2026-08-03)',
+    etfs:[{tk:'445290',nm:'KODEX 로봇액티브',chg:'—'},{tk:'0177X0',nm:'ACE K휴머노이드로봇산업TOP2+',chg:'—'}],
+    stocks:[{tk:'439960',nm:'코스모로보틱스',chg:'—'},{tk:'058610',nm:'에스피지',chg:'—'},{tk:'277810',nm:'레인보우로보틱스',chg:'—'},{tk:'319400',nm:'현대무벡스',chg:'—'},{tk:'108490',nm:'로보티즈',chg:'—'}],
+    query:'로봇주 미국 중국산 로봇 규제' },
+];
+const ALL_THEMES = HOT_THEMES.concat(THEMES);
+
+/* THEME_ETF_CODES_START (이 블록도 매일 자동 갱신됨) */
+const THEME_ETF_CODES = ['365000','0105D0','448570','365040','117700','139220','228790','0008T0','091170','091180','434730','433500','0098F0','305720','465330','466920','0115D0','494670','228800','388280'];
+/* THEME_ETF_CODES_END */
+/* THEME_STOCK_CODES_START (매일 자동 갱신) */
+const THEME_STOCK_CODES = ['035420','017670','347850','477850','463020','148780','051160','047040','006360','278470','032830','105560','005380','073240','034020','032820','006400','086520','247540','329180','003490','103140'];
+/* THEME_STOCK_CODES_END */
+const HOT_ETF_CODES = ['396500','0167A0','395160','487240','491820','0101N0','455850','457990','244580','462900','0000Z0','445290','0177X0'];
+const HOT_STOCK_CODES = ['000660','005930','402340','080220','006340','298040','010120','043260','001440','267260','119850','009150','011070','353200','222800','332570','219130','010170','017900','069540','218410','072950','049080','036930','240810','403870','095610','319660','033160','089970','475150','009830','010060','196170','068270','214450','141080','439960','058610','277810','319400','108490'];
+// --- 공통 헬퍼 ---
+function kf(code){ return 'https://finance.naver.com/item/main.naver?code=' + code; }
+function wonFmt(n){ return (Number(n)||0).toLocaleString('ko-KR') + '원'; }
+function pctFmt(n){ const v = Number(n)||0; return (v>0?'+':'') + v.toFixed(2) + '%'; }
+function stripB(s){ return String(s||'').replace(/<\/?b>/g,'').replace(/&quot;/g,'"').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&#39;/g,"'"); }
+async function callKr(tool, args){
+  const r = await window.cowork.callMcpTool('mcp__' + KR_SERVER + '__koreaStock-' + tool, args);
+  if (r && r.isError) throw new Error(tool);
+  let p = r.structuredContent;
+  if (!p && r.content && r.content[0] && r.content[0].text){
+    try { p = JSON.parse(r.content[0].text); } catch(e){ throw new Error(tool); }
+  }
+  if (!p || p.ok === false || !p.data) throw new Error(tool);
+  return p.data;
+}
+
+// --- render 2x2 bubbles (겹침 자동 분산 + 라벨 잘림 방지) ---
+const map = document.getElementById('map');
+function bubbleLabel(n){
+  let s = String(n).trim();
+  if (s.length > 11) s = s.split('·')[0].trim();
+  if (s.length > 11) s = s.slice(0,10);
+  return s.replace(/·/g, '\n');
+}
+(function layoutBubbles(){
+  const MW = map.clientWidth || 900, MH = map.clientHeight || 430;
+  const nodes = ALL_THEMES.map(t => ({
+    t,
+    d: 30 + t.score * 1.9,
+    x: Math.min(0.95, Math.max(0.05, t.maturity/100)) * MW,
+    y: Math.min(0.95, Math.max(0.05, (100 - t.momentum)/100)) * MH
+  }));
+  for (let it = 0; it < 200; it++){
+    let moved = false;
+    for (let i = 0; i < nodes.length; i++){
+      for (let j = i+1; j < nodes.length; j++){
+        const a = nodes[i], b = nodes[j];
+        let dx = b.x - a.x, dy = b.y - a.y;
+        let dist = Math.sqrt(dx*dx + dy*dy) || 0.01;
+        const need = (a.d + b.d)/2 + 5;
+        if (dist < need){
+          const push = (need - dist)/2;
+          dx /= dist; dy /= dist;
+          a.x -= dx*push; a.y -= dy*push;
+          b.x += dx*push; b.y += dy*push;
+          moved = true;
+        }
+      }
+    }
+    nodes.forEach(n => {
+      n.x = Math.min(MW - n.d/2 - 2, Math.max(n.d/2 + 2, n.x));
+      n.y = Math.min(MH - n.d/2 - 2, Math.max(n.d/2 + 2, n.y));
+    });
+    if (!moved) break;
+  }
+  nodes.forEach(n => {
+    const t = n.t;
+    const b = document.createElement('div');
+    b.className = 'bubble';
+    b.style.width = n.d + 'px'; b.style.height = n.d + 'px';
+    b.style.left = n.x + 'px'; b.style.top = n.y + 'px';
+    b.style.background = t.color;
+    b.style.fontSize = (t.name.length > 8 ? 9 : 10.5) + 'px';
+    b.textContent = bubbleLabel(t.name);
+    b.title = t.name + ' · ' + t.score + '점 (성숙도 ' + t.maturity + ' · 모멘텀 ' + t.momentum + ')';
+    b.onclick = () => { const el = document.getElementById('news-'+t.id); if(el){ el.scrollIntoView({behavior:'smooth',block:'center'});} fetchNews(t); };
+    map.appendChild(b);
+  });
+})();
+
+// --- ETF·관련주 칩 (클릭 시 네이버 금융) ---
+function etfChips(etfs){
+  const html = (etfs||[]).map(e => {
+    const up = !String(e.chg).trim().startsWith('-');
+    return `<a class="etf ${up?'up':'down'}" href="${kf(e.tk)}" target="_blank" rel="noopener" title="${e.tk} · 네이버 금융">${e.nm} ${e.chg}</a>`;
+  }).join('');
+  return html || '<span class="muted">해당 ETF 없음</span>';
+}
+function renderThemeEtfs(){
+  ALL_THEMES.forEach(t => { const el = document.getElementById('etfchips-'+t.id); if (el) el.innerHTML = etfChips(t.etfs); });
+}
+function stockChips(stocks){
+  const html = (stocks||[]).map(s => {
+    const up = !String(s.chg).trim().startsWith('-');
+    return `<a class="etf ${up?'up':'down'}" href="${kf(s.tk)}" target="_blank" rel="noopener" title="${s.tk} · 네이버 금융">${s.nm} ${s.chg}</a>`;
+  }).join('');
+  return html || '<span class="muted">해당 종목 없음</span>';
+}
+function renderThemeStocks(){
+  ALL_THEMES.forEach(t => { const el = document.getElementById('stockchips-'+t.id); if (el) el.innerHTML = stockChips(t.stocks); });
+}
+
+// --- render cards ---
+function buildThemeCards(list, host){
+list.slice().sort((a,b)=>b.score-a.score).forEach(t => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <div class="top"><h3>${t.name}</h3><span class="score" style="color:${t.color}">${t.score}<span style="font-size:11px;color:#9aa1ac">/20</span></span></div>
+    <div class="tchart">
+      <div class="cwrap" id="tcw-${t.id}"><div class="skel"></div></div>
+      <div class="clg" id="tcl-${t.id}"><span class="cst">최근 1개월 추이 — 불러오는 중…</span></div>
+    </div>
+    <div class="etfrow">관련 ETF <span class="emu">(거래대금순·클릭 시 네이버 금융)</span><br><span id="etfchips-${t.id}">${etfChips(t.etfs)}</span></div>
+    <div class="etfrow">관련주 <span class="emu">(거래대금순·클릭 시 네이버 금융)</span><br><span id="stockchips-${t.id}">${stockChips(t.stocks)}</span></div>
+    <div class="catalyst">${t.catalyst}</div>
+    <button class="news-btn" data-id="${t.id}">📰 오늘 뉴스 불러오기</button>
+    <div class="news-list" id="news-${t.id}"><span class="muted">아직 불러오지 않음</span></div>`;
+  card.querySelector('[data-id]').onclick = () => fetchNews(t);
+  host.appendChild(card);
+});
+}
+buildThemeCards(HOT_THEMES, document.getElementById('cardsHot'));
+buildThemeCards(THEMES, document.getElementById('cards'));
+
+// ================= 테마별 최근 1개월 가격 추이 차트 =================
+const PX_TTL = 6*3600*1000;   // 가격 캐시 6시간
+const LINE_COLORS = ['#2563eb', '#ef4444'];
+const themeCharts = {};
+let PXC = {};
+try {
+  const _pc = JSON.parse(localStorage.getItem('themePxKrV1')||'null');
+  if (_pc && _pc.t && (Date.now() - _pc.t) < PX_TTL) PXC = _pc.d || {};
+} catch(e){}
+function savePx(){ try { localStorage.setItem('themePxKrV1', JSON.stringify({ t:Date.now(), d:PXC })); } catch(e){} }
+
+function ymd(d){ return d.getFullYear() + ('0'+(d.getMonth()+1)).slice(-2) + ('0'+d.getDate()).slice(-2); }
+
+// 테마당 그릴 2개 시리즈: 대표 ETF 1 + 대표 관련주 1 (ETF 없으면 관련주 1·2위)
+function chartSeries(t){
+  const out = [];
+  const es = (t.etfs||[]).filter(x => x && x.tk);
+  const ss = (t.stocks||[]).filter(x => x && x.tk);
+  if (es.length) out.push({ tk:String(es[0].tk), nm:es[0].nm, kind:'ETF' });
+  for (const x of ss){
+    if (out.length >= 2) break;
+    const tk = String(x.tk);
+    if (!out.some(o => o.tk === tk)) out.push({ tk, nm:x.nm, kind:'주' });
+  }
+  return out.slice(0,2);
+}
+async function fetchPx(tk){
+  const key = String(tk);
+  if (PXC[key]) return PXC[key];
+  const today = new Date();
+  const from = new Date(today.getTime() - 35*86400000);
+  const data = await callKr('stock_get_price_history', {
+    stock_code:key, period:'D', start_date:ymd(from), end_date:ymd(today), limit:40 });
+  const raw = (data && data.rows) ? data.rows.slice() : [];
+  raw.reverse();  // 응답은 최신→과거 내림차순 — 반드시 뒤집는다
+  const rows = raw
+    .filter(o => o && o.close != null && isFinite(Number(o.close)))
+    .map(o => ({ d:String(o.date||'').replace(/^(\d{4})(\d{2})(\d{2})$/, '$2-$3'), c:Number(o.close) }));
+  if (rows.length < 2) throw new Error('px');
+  PXC[key] = rows; savePx();
+  return rows;
+}
+function drawThemeChart(t, series){
+  const wrap = document.getElementById('tcw-'+t.id), lg = document.getElementById('tcl-'+t.id);
+  if (!wrap || !lg) return;
+  wrap.innerHTML = '<canvas id="tc-'+t.id+'"></canvas>';
+  const labels = series[0].rows.map(r => r.d);
+  const ds = series.map((s,i) => {
+    const first = s.rows[0].c || 1;
+    return { label:s.nm||s.tk, data:s.rows.map(r => (r.c/first)*100),
+             borderColor:LINE_COLORS[i], backgroundColor:LINE_COLORS[i],
+             borderWidth:1.8, pointRadius:0, pointHitRadius:8, tension:.25, fill:false };
+  });
+  if (themeCharts[t.id]) themeCharts[t.id].destroy();
+  themeCharts[t.id] = new Chart(document.getElementById('tc-'+t.id), {
+    type:'line',
+    data:{ labels, datasets:ds },
+    options:{
+      responsive:true, maintainAspectRatio:false, animation:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{ display:false },
+        tooltip:{ callbacks:{ label: c => c.dataset.label + '  ' + (c.parsed.y-100>=0?'+':'') + (c.parsed.y-100).toFixed(1) + '%' } }
+      },
+      scales:{
+        x:{ ticks:{ maxTicksLimit:5, font:{ size:9.5 }, color:'#9aa1ac' }, grid:{ display:false } },
+        y:{ ticks:{ maxTicksLimit:4, font:{ size:9.5 }, color:'#9aa1ac',
+                    callback: v => (v-100>=0?'+':'') + (v-100).toFixed(0) + '%' },
+            grid:{ color:'#f0f1f4' } }
+      }
+    }
+  });
+  lg.innerHTML = series.map((s,i) => {
+    const first = s.rows[0].c, last = s.rows[s.rows.length-1].c;
+    const p = ((last/first)-1)*100;
+    return `<span class="it"><i class="dot" style="background:${LINE_COLORS[i]}"></i>`
+      + `<a href="${kf(s.tk)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;font-weight:700" title="${s.tk} · 네이버 금융">${s.nm||s.tk}</a>`
+      + `<span class="emu">${s.kind}</span><b class="${p>=0?'up':'down'}">${p>=0?'+':''}${p.toFixed(1)}%</b></span>`;
+  }).join('') + '<span class="cst">1개월 · 시작일=0% 정규화</span>';
+}
+async function loadThemeChart(t){
+  const wrap = document.getElementById('tcw-'+t.id), lg = document.getElementById('tcl-'+t.id);
+  const want = chartSeries(t);
+  if (!want.length){
+    if (wrap) wrap.innerHTML = '';
+    if (lg) lg.innerHTML = '<span class="cst">차트 대상 종목 없음</span>';
+    return;
+  }
+  const series = [];
+  for (const w of want){
+    try { series.push({ tk:w.tk, nm:w.nm, kind:w.kind, rows: await fetchPx(w.tk) }); } catch(e){}
+  }
+  if (!series.length){
+    if (wrap) wrap.innerHTML = '';
+    if (lg) lg.innerHTML = '<span class="cst">가격 데이터 없음 (상장 직후이거나 종목코드 확인 필요)</span>';
+    return;
+  }
+  const minLen = Math.min.apply(null, series.map(s => s.rows.length));
+  series.forEach(s => { s.rows = s.rows.slice(-minLen); });
+  drawThemeChart(t, series);
+}
+async function loadAllThemeCharts(){
+  const st = document.getElementById('chartStatus');
+  for (let i=0;i<ALL_THEMES.length;i++){
+    if (st) st.textContent = `📈 차트 불러오는 중… (${i+1}/${ALL_THEMES.length}) ${ALL_THEMES[i].name}`;
+    await loadThemeChart(ALL_THEMES[i]);
+  }
+  if (st) st.textContent = '차트 완료 · ' + new Date().toLocaleString('ko-KR') + ' · 최근 1개월 일봉 (6시간 캐시)';
+}
+document.getElementById('reloadCharts').onclick = async function(){
+  const btn = this; btn.disabled = true;
+  PXC = {}; savePx();
+  ALL_THEMES.forEach(t => {
+    const w = document.getElementById('tcw-'+t.id);
+    if (w) w.innerHTML = '<div class="skel"></div>';
+    if (themeCharts[t.id]){ themeCharts[t.id].destroy(); delete themeCharts[t.id]; }
+  });
+  try { await loadAllThemeCharts(); } catch(e){ document.getElementById('chartStatus').textContent = '차트 불러오기 실패 — 잠시 후 재시도'; }
+  btn.disabled = false;
+};
+setTimeout(function(){ loadAllThemeCharts().catch(function(){}); }, 80);
+
+// ================= KIS 순위 패널 (거래대금·등락률·거래량) =================
+const RANK = { tvks:[], tvkq:[], crksu:[], crksd:[], crkqu:[], crkqd:[], vol:[] };
+function renderRankRows(elId, rows, mode){
+  const host = document.getElementById(elId);
+  if (!host) return;
+  const list = (rows||[]).slice(0,20);
+  if (!list.length){ host.innerHTML = '<span class="muted">아직 불러오지 않음</span>'; return; }
+  host.innerHTML = list.map((r,i) => {
+    const rate = Number(r.change_rate)||0;
+    const cls = rate >= 0 ? 'up' : 'down';
+    let mid = '';
+    if (mode === 'tv') mid = wonFmt(r.trading_value);
+    else if (mode === 'vol') mid = (Number(r.volume)||0).toLocaleString('ko-KR') + '주 · ' + (r.trading_value!=null ? wonFmt(r.trading_value) : '');
+    else mid = (Number(r.price)||0).toLocaleString('ko-KR') + '원';
+    return `<div class="mv-row"><span class="mv-rank">${r.rank||i+1}</span><span class="mv-tic"><a href="${kf(r.stock_code)}" target="_blank" rel="noopener" title="${r.stock_code} · 네이버 금융">${r.name}</a></span><span class="mv-name">${mid}</span><span class="mv-chg ${cls}">${pctFmt(rate)}</span></div>`;
+  }).join('');
+}
+function renderAllRank(){
+  renderRankRows('kr-cr-ks-up', RANK.crksu, 'cr');
+  renderRankRows('kr-cr-ks-dn', RANK.crksd, 'cr');
+  renderRankRows('kr-cr-kq-up', RANK.crkqu, 'cr');
+  renderRankRows('kr-cr-kq-dn', RANK.crkqd, 'cr');
+}
+function applyChgMap(mp){
+  if (!mp || !Object.keys(mp).length) return;
+  ALL_THEMES.forEach(t => {
+    (t.etfs||[]).forEach(e => { const v = mp[e.tk]; if (v != null) e.chg = pctFmt(v); });
+    (t.stocks||[]).forEach(s => { const v = mp[s.tk]; if (v != null) s.chg = pctFmt(v); });
+  });
+  renderThemeEtfs(); renderThemeStocks();
+}
+function rankChgMap(){
+  const mp = {};
+  [RANK.tvks, RANK.tvkq, RANK.crksu, RANK.crksd, RANK.crkqu, RANK.crkqd, RANK.vol].forEach(arr => {
+    (arr||[]).forEach(r => { if (r.stock_code && r.change_rate != null) mp[r.stock_code] = r.change_rate; });
+  });
+  return mp;
+}
+async function refreshRank(){
+  const st = document.getElementById('rankStatus');
+  try {
+    if (st) st.textContent = '거래대금 순위 불러오는 중… (1/4)';
+    RANK.tvks = (await callKr('market_get_movers', { ranking_type:'trading_value', market:'KOSPI', limit:20 })).items || [];
+    RANK.tvkq = (await callKr('market_get_movers', { ranking_type:'trading_value', market:'KOSDAQ', limit:20 })).items || [];
+    if (st) st.textContent = '등락률 순위 불러오는 중… (2/4)';
+    RANK.crksu = (await callKr('market_get_movers', { ranking_type:'change_rate', market:'KOSPI', direction:'top', limit:20 })).items || [];
+    RANK.crksd = (await callKr('market_get_movers', { ranking_type:'change_rate', market:'KOSPI', direction:'bottom', limit:20 })).items || [];
+    if (st) st.textContent = '등락률 순위 불러오는 중… (3/4)';
+    RANK.crkqu = (await callKr('market_get_movers', { ranking_type:'change_rate', market:'KOSDAQ', direction:'top', limit:20 })).items || [];
+    RANK.crkqd = (await callKr('market_get_movers', { ranking_type:'change_rate', market:'KOSDAQ', direction:'bottom', limit:20 })).items || [];
+    if (st) st.textContent = '거래량 순위 불러오는 중… (4/4)';
+    RANK.vol = (await callKr('market_get_movers', { ranking_type:'volume', market:'ALL', limit:20 })).items || [];
+    renderAllRank();
+    applyChgMap(rankChgMap());
+    const now = new Date().toLocaleString('ko-KR');
+    document.getElementById('crTime').textContent = '— KIS 공식 순위 · 갱신 ' + now;
+    if (st) st.textContent = '완료 · ' + now;
+    try { localStorage.setItem('krRankEduV1', JSON.stringify({ t:Date.now(), d:RANK })); } catch(e){}
+  } catch(e){
+    if (st) st.textContent = '순위 불러오기 실패 — 잠시 후 재시도';
+  }
+}
+document.getElementById('refreshRank').onclick = async function(){
+  const btn = this; btn.disabled = true;
+  await refreshRank();
+  btn.disabled = false;
+};
+document.getElementById('refreshThemes').onclick = async function(){
+  const btn = this; btn.disabled = true;
+  const ts = document.getElementById('themeStatus');
+  try {
+    ts.textContent = 'KIS 순위 기반 등락률 갱신 중…';
+    await refreshRank();
+    ts.textContent = '완료 · ' + new Date().toLocaleString('ko-KR') + ' (순위 밖 종목은 — 유지)';
+  } catch(e){ ts.textContent = '갱신 실패 — 잠시 후 재시도'; }
+  btn.disabled = false;
+};
+
+// ================= 개별 종목 시세·차트 =================
+const WATCH = ['000660','005930','009150','006340','010170','477850'];
+let priceChart = null;
+const NM_HINT = {'000660':'SK하이닉스','005930':'삼성전자','009150':'삼성전기','006340':'대원전선','010170':'대한광통신','477850':'마키나락스'};
+const chipHost = document.getElementById('tkChips');
+WATCH.forEach(tk => {
+  const b = document.createElement('button');
+  b.className = 'news-btn chip'; b.textContent = NM_HINT[tk] || tk;
+  b.onclick = () => doQuote(tk);
+  chipHost.appendChild(b);
+});
+document.getElementById('qBtn').onclick = () => { const tk = document.getElementById('tkInput').value.trim(); if (tk) doQuote(tk); };
+document.getElementById('tkInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('qBtn').click(); });
+
+async function doQuote(tk){
+  const st = document.getElementById('qStatus'); const card = document.getElementById('quoteCard');
+  st.textContent = tk + ' 조회 중…'; card.innerHTML = '';
+  try {
+    const q = await callKr('stock_get_quote', { stock_code: tk });
+    const rate = Number(q.change_rate)||0; const cls = rate >= 0 ? 'up' : 'down';
+    const code = q.stock_code || tk;
+    card.innerHTML = `<div class="card" style="max-width:420px;">
+      <div class="top"><h3><a href="${kf(code)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" title="네이버 금융에서 열기">${code} ↗</a></h3><span class="score ${cls}">${(Number(q.price)||0).toLocaleString('ko-KR')}원</span></div>
+      <div class="tickers ${cls}" style="font-weight:700;">${rate >= 0 ? '▲' : '▼'} ${(Number(q.change)||0).toLocaleString('ko-KR')}원 (${pctFmt(rate)})</div>
+      <div class="tickers">시가 ${(Number(q.open)||0).toLocaleString('ko-KR')}원 · 고가 ${(Number(q.high)||0).toLocaleString('ko-KR')}원 · 저가 ${(Number(q.low)||0).toLocaleString('ko-KR')}원</div>
+      <div class="tickers">거래량 ${(Number(q.volume)||0).toLocaleString('ko-KR')}주 · 거래대금 ${q.trading_value!=null?wonFmt(q.trading_value):'—'}</div>
+      <button class="news-btn" id="chartBtn">📈 일봉 차트 보기 (1회 추가 호출)</button></div>`;
+    document.getElementById('chartBtn').onclick = () => doChart(code);
+    st.textContent = '완료 · ' + new Date().toLocaleTimeString('ko-KR');
+  } catch(e) { st.textContent = '조회 실패 — 종목코드 확인 후 재시도'; }
+}
+async function doChart(tk){
+  const st = document.getElementById('qStatus'); st.textContent = tk + ' 차트 불러오는 중…';
+  try {
+    const rows = await fetchPx(tk);
+    const labels = rows.map(r => r.d); const data = rows.map(r => r.c);
+    const wrap = document.getElementById('chartWrap'); wrap.style.display = 'block';
+    if (priceChart) priceChart.destroy();
+    priceChart = new Chart(document.getElementById('priceChart'), {
+      type: 'line',
+      data: { labels, datasets: [{ label: tk + ' 종가(원)', data, borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,.08)', fill: true, tension: .2, pointRadius: rows.length > 20 ? 0 : 3 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true } }, scales: { x: { ticks: { maxTicksLimit: 8 } } } }
+    });
+    st.textContent = '차트 완료 (' + rows.length + '거래일)';
+  } catch(e) { st.textContent = '차트 실패 — 잠시 후 재시도'; }
+}
+
+// ================= 뉴스 (네이버 뉴스 — 한국어 그대로) =================
+function saveCache(id, html){
+  try { const c = JSON.parse(localStorage.getItem('themeRadarEduNews')||'{}'); c[id]=html; localStorage.setItem('themeRadarEduNews', JSON.stringify(c)); } catch(e){}
+}
+try {
+  const cached = JSON.parse(localStorage.getItem('themeRadarEduNews')||'{}');
+  Object.entries(cached).forEach(([id,html]) => { const el=document.getElementById('news-'+id); if(el) el.innerHTML = html; });
+} catch(e){}
+function pdate(s){ try{ const d=new Date(s); if(isNaN(d)) return ''; return ('0'+(d.getMonth()+1)).slice(-2)+'.'+('0'+d.getDate()).slice(-2); }catch(e){ return ''; } }
+function kdate(s){ if(!s||String(s).length!==8) return ''; s=String(s); return s.slice(4,6)+'.'+s.slice(6,8); }
+async function searchNews(query, n){
+  const r = await window.cowork.callMcpTool('mcp__' + KR_SERVER + '__NaverSearch-search_news', { query: query, display:(n||8), sort:'date' });
+  if (r && r.isError) return [];
+  let p = r.structuredContent;
+  if (!p && r.content && r.content[0] && r.content[0].text){ try { p = JSON.parse(r.content[0].text); } catch(e){ return []; } }
+  return (p && p.items) ? p.items : [];
+}
+async function fetchNews(t){
+  const el = document.getElementById('news-'+t.id);
+  if(!el) return;
+  el.innerHTML = '<span class="muted">불러오는 중…</span>';
+  try {
+    const q = t.query || t.name;
+    if(!q){ el.innerHTML = '<span class="muted">검색어가 없어 뉴스를 찾을 수 없습니다</span>'; return; }
+    const items = await searchNews(q, 10);
+    if (!items.length){ el.innerHTML = '<span class="muted">검색 결과 없음</span>'; return; }
+    const seen = {};
+    const uniq = items.filter(n => { const k=stripB(n.title||'').toLowerCase(); if(!k||seen[k]) return false; seen[k]=1; return true; });
+    const html = uniq.slice(0,6).map(n =>
+      `<a href="${n.link||n.originallink||'#'}" target="_blank" rel="noopener">${stripB(n.title)}<span class="date">· ${pdate(n.pubDate)}</span></a>`
+    ).join('');
+    el.innerHTML = html;
+    saveCache(t.id, html);
+  } catch(e){
+    el.innerHTML = '<span class="muted">불러오기 실패 — 잠시 후 다시 시도</span>';
+  }
+}
+document.getElementById('refreshAll').onclick = async function(){
+  const btn = this; btn.disabled = true;
+  const st = document.getElementById('status');
+  for (let i=0;i<ALL_THEMES.length;i++){
+    st.textContent = `뉴스 불러오는 중… (${i+1}/${ALL_THEMES.length}) ${ALL_THEMES[i].name}`;
+    await fetchNews(ALL_THEMES[i]);
+  }
+  st.textContent = '완료 · ' + new Date().toLocaleString('ko-KR');
+  btn.disabled = false;
+};
+
+// ================= 초기화: 저장된 순위 복원 + 10분 경과 시 자동 갱신 =================
+(function(){
+  let stale = true;
+  try {
+    const c = JSON.parse(localStorage.getItem('krRankEduV1')||'null');
+    if (c && c.d){
+      Object.keys(RANK).forEach(k => { if (c.d[k]) RANK[k] = c.d[k]; });
+      renderAllRank();
+      applyChgMap(rankChgMap());
+      const when = new Date(c.t).toLocaleString('ko-KR');
+      document.getElementById('crTime').textContent = '— 저장된 데이터 (' + when + ')';
+      stale = (Date.now() - c.t) > 10*60*1000;
+    }
+  } catch(e){}
+  renderAllRank();
+  if (stale){ setTimeout(function(){ refreshRank().catch(function(){}); }, 300); }
+})();
+</script>
+<script>
+/* =====================================================================
+   브라우저(오프라인) 모드 패치
+   - Cowork 아티팩트로 열면 IS_SNAPSHOT === false → 이 블록 전체가 실행되지 않는다.
+   - 원본 로직·스타일은 건드리지 않고, 라이브 호출이 필요한 부분만 감싼다.
+   ===================================================================== */
+if (IS_SNAPSHOT) {
+  /* 1) 상단 안내 배너 */
+  document.getElementById('snapBanner').innerHTML =
+    '<div class="snapbar"><b>오프라인 스냅샷 모드</b> — 이 파일은 브라우저에서 바로 열리도록 만든 단독 HTML입니다. ' +
+    '화면의 순위·차트·등락률은 <b>' + SNAP_AT + '</b> 시점에 내려받은 값으로 고정되어 있습니다 (출처: ' + SNAP_SOURCE + ').<br>' +
+    '실시간 갱신과 뉴스 검색은 Cowork 아티팩트에서만 동작합니다. 종목명을 누르면 네이버 금융 현재 시세로 이동합니다.</div>';
+
+  /* 2) 갱신 완료 문구를 스냅샷 시각으로 표기 */
+  var _loadAll = loadAllThemeCharts;
+  loadAllThemeCharts = async function(){
+    await _loadAll();
+    var st = document.getElementById('chartStatus');
+    if (st) st.textContent = '차트 완료 · 스냅샷 ' + SNAP_AT + ' · 최근 1개월 일봉 (고정 데이터)';
+  };
+  var _refreshRank = refreshRank;
+  refreshRank = async function(){
+    await _refreshRank();
+    var ct = document.getElementById('crTime');
+    if (ct) ct.textContent = '— KIS 공식 순위 · 스냅샷 ' + SNAP_AT;
+    var rs = document.getElementById('rankStatus');
+    if (rs) rs.textContent = '스냅샷 데이터 (고정)';
+    var ts = document.getElementById('themeStatus');
+    if (ts) ts.textContent = '스냅샷 기준 등락률 (순위 밖 종목은 — 유지)';
+  };
+
+  /* 3) 뉴스: 검색 API 대신 네이버 뉴스 검색 링크로 대체 */
+  fetchNews = async function(t){
+    var el = document.getElementById('news-' + t.id);
+    if (!el) return;
+    var q = encodeURIComponent(t.query || t.name);
+    el.innerHTML = '<span class="muted">오프라인 스냅샷에는 뉴스가 포함되지 않습니다.</span>' +
+      '<a href="https://search.naver.com/search.naver?where=news&query=' + q + '&sort=1" target="_blank" rel="noopener">🔎 네이버 뉴스에서 「' + (t.query || t.name) + '」 검색</a>';
+  };
+  document.getElementById('refreshAll').onclick = function(){
+    ALL_THEMES.forEach(function(t){ fetchNews(t); });
+    document.getElementById('status').textContent = '오프라인 모드 — 각 카드에 네이버 뉴스 검색 링크를 넣었습니다.';
+  };
+  document.getElementById('refreshAll').textContent = '🔎 전체 테마 뉴스 검색 링크 만들기';
+
+  /* 4) 단건 시세: 스냅샷 종가로 카드 구성 (시가·고가·저가·거래량은 스냅샷에 없음) */
+  doQuote = async function(tk){
+    var st = document.getElementById('qStatus');
+    var card = document.getElementById('quoteCard');
+    var code = String(tk || '').trim();
+    var c = SNAP_PX[code];
+    if (!c) {
+      card.innerHTML = '';
+      st.textContent = '스냅샷에 없는 종목입니다 — 포함 종목: ' + Object.keys(SNAP_PX).length + '개 (테마 카드 차트 대상)';
+      return;
+    }
+    var price = c[0], prev = c[1];
+    var chg = price - prev;
+    var rate = prev ? (chg / prev) * 100 : 0;
+    var cls = rate >= 0 ? 'up' : 'down';
+    card.innerHTML = '<div class="card" style="max-width:420px;">' +
+      '<div class="top"><h3><a href="' + kf(code) + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" title="네이버 금융에서 현재 시세 열기">' + code + ' ↗</a></h3>' +
+      '<span class="score ' + cls + '">' + price.toLocaleString('ko-KR') + '원</span></div>' +
+      '<div class="tickers ' + cls + '" style="font-weight:700;">' + (rate >= 0 ? '▲' : '▼') + ' ' + Math.abs(chg).toLocaleString('ko-KR') + '원 (' + pctFmt(rate) + ')</div>' +
+      '<div class="tickers"><span class="muted">스냅샷 종가 기준 · ' + SNAP_DATES[0].slice(0,4) + '-' + SNAP_DATES[0].slice(4,6) + '-' + SNAP_DATES[0].slice(6,8) + ' 종가 대비 전일 종가</span></div>' +
+      '<div class="tickers"><span class="muted">시가·고가·저가·거래량은 스냅샷에 포함되지 않았습니다.</span></div>' +
+      '<button class="news-btn" id="chartBtn">📈 일봉 차트 보기 (스냅샷 25거래일)</button></div>';
+    document.getElementById('chartBtn').onclick = function(){ doChart(code); };
+    st.textContent = '스냅샷 ' + SNAP_AT;
+  };
+  document.getElementById('tkInput').placeholder = '스냅샷 포함 종목코드 (예: 005930)';
+}
+</script>
+</body>
+</html>
