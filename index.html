@@ -104,7 +104,6 @@
   .snapbar { background:#fffbeb; border:1px solid #fcd34d; color:#92400e; border-radius:10px; padding:10px 13px; margin-bottom:16px; font-size:12.5px; line-height:1.6; }
   .snapbar b { color:#78350f; }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
 </head>
 <body>
 <div class="wrap">
@@ -588,44 +587,66 @@ async function fetchPx(tk){
   PXC[key] = rows; savePx();
   return rows;
 }
+// ---- 인라인 SVG 라인차트 (외부 라이브러리 없음) ----
+function svgEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function drawSvgLine(host, labels, series, opt){
+  if (!host) return;
+  opt = opt || {};
+  const W = Math.max(220, host.clientWidth || 320);
+  const H = Math.max(120, host.clientHeight || 190);
+  const L = opt.padL || 42, R = 8, T = 10, B = 20;
+  const iw = W - L - R, ih = H - T - B;
+  let lo = Infinity, hi = -Infinity;
+  series.forEach(s => s.v.forEach(v => { if (v < lo) lo = v; if (v > hi) hi = v; }));
+  if (!isFinite(lo) || !isFinite(hi)) { host.innerHTML = ''; return; }
+  if (hi === lo) hi = lo + 1;
+  const gap = (hi - lo) * 0.08; lo -= gap; hi += gap;
+  const n = labels.length;
+  const X = i => L + (n < 2 ? iw / 2 : iw * i / (n - 1));
+  const Y = v => T + ih - ih * (v - lo) / (hi - lo);
+  let out = '';
+  for (let k = 0; k < 4; k++){
+    const gv = lo + (hi - lo) * k / 3, gy = Y(gv);
+    out += '<line x1="' + L + '" y1="' + gy.toFixed(1) + '" x2="' + (W - R) + '" y2="' + gy.toFixed(1) + '" stroke="#f0f1f4"/>';
+    out += '<text x="' + (L - 5) + '" y="' + (gy + 3.2).toFixed(1) + '" text-anchor="end" font-size="9.5" fill="#9aa1ac">' + svgEsc(opt.yfmt(gv)) + '</text>';
+  }
+  const step = Math.max(1, Math.ceil(n / 5));
+  for (let i = 0; i < n; i += step){
+    out += '<text x="' + X(i).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle" font-size="9.5" fill="#9aa1ac">' + svgEsc(labels[i]) + '</text>';
+  }
+  series.forEach(s => {
+    const pts = s.v.map((v, i) => X(i).toFixed(1) + ',' + Y(v).toFixed(1)).join(' ');
+    if (opt.fill) out += '<polygon points="' + X(0).toFixed(1) + ',' + (T + ih) + ' ' + pts + ' ' + X(n - 1).toFixed(1) + ',' + (T + ih) + '" fill="' + s.color + '" fill-opacity=".08"/>';
+    out += '<polyline points="' + pts + '" fill="none" stroke="' + s.color + '" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><title>' + svgEsc(s.name) + '</title></polyline>';
+  });
+  host.innerHTML = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" style="display:block">' + out + '</svg>';
+}
+const THEME_LAST = {};
 function drawThemeChart(t, series){
   const wrap = document.getElementById('tcw-'+t.id), lg = document.getElementById('tcl-'+t.id);
   if (!wrap || !lg) return;
-  wrap.innerHTML = '<canvas id="tc-'+t.id+'"></canvas>';
+  THEME_LAST[t.id] = series;
   const labels = series[0].rows.map(r => r.d);
-  const ds = series.map((s,i) => {
-    const first = s.rows[0].c || 1;
-    return { label:s.nm||s.tk, data:s.rows.map(r => (r.c/first)*100),
-             borderColor:LINE_COLORS[i], backgroundColor:LINE_COLORS[i],
-             borderWidth:1.8, pointRadius:0, pointHitRadius:8, tension:.25, fill:false };
-  });
-  if (themeCharts[t.id]) themeCharts[t.id].destroy();
-  themeCharts[t.id] = new Chart(document.getElementById('tc-'+t.id), {
-    type:'line',
-    data:{ labels, datasets:ds },
-    options:{
-      responsive:true, maintainAspectRatio:false, animation:false,
-      interaction:{ mode:'index', intersect:false },
-      plugins:{
-        legend:{ display:false },
-        tooltip:{ callbacks:{ label: c => c.dataset.label + '  ' + (c.parsed.y-100>=0?'+':'') + (c.parsed.y-100).toFixed(1) + '%' } }
-      },
-      scales:{
-        x:{ ticks:{ maxTicksLimit:5, font:{ size:9.5 }, color:'#9aa1ac' }, grid:{ display:false } },
-        y:{ ticks:{ maxTicksLimit:4, font:{ size:9.5 }, color:'#9aa1ac',
-                    callback: v => (v-100>=0?'+':'') + (v-100).toFixed(0) + '%' },
-            grid:{ color:'#f0f1f4' } }
-      }
-    }
-  });
+  const ss = series.map((s,i) => ({
+    name: (s.nm||s.tk), color: LINE_COLORS[i],
+    v: s.rows.map(r => (r.c / (s.rows[0].c || 1)) * 100)
+  }));
+  drawSvgLine(wrap, labels, ss, { yfmt: v => (v-100>=0?'+':'') + (v-100).toFixed(0) + '%' });
   lg.innerHTML = series.map((s,i) => {
     const first = s.rows[0].c, last = s.rows[s.rows.length-1].c;
     const p = ((last/first)-1)*100;
-    return `<span class="it"><i class="dot" style="background:${LINE_COLORS[i]}"></i>`
-      + `<a href="${kf(s.tk)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;font-weight:700" title="${s.tk} · 네이버 금융">${s.nm||s.tk}</a>`
-      + `<span class="emu">${s.kind}</span><b class="${p>=0?'up':'down'}">${p>=0?'+':''}${p.toFixed(1)}%</b></span>`;
+    return '<span class="it"><i class="dot" style="background:' + LINE_COLORS[i] + '"></i>'
+      + '<a href="' + kf(s.tk) + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;font-weight:700" title="' + s.tk + ' · 네이버 금융">' + (s.nm||s.tk) + '</a>'
+      + '<span class="emu">' + s.kind + '</span><b class="' + (p>=0?'up':'down') + '">' + (p>=0?'+':'') + p.toFixed(1) + '%</b></span>';
   }).join('') + '<span class="cst">1개월 · 시작일=0% 정규화</span>';
 }
+let _rszTimer;
+window.addEventListener('resize', function(){
+  clearTimeout(_rszTimer);
+  _rszTimer = setTimeout(function(){
+    ALL_THEMES.forEach(function(t){ if (THEME_LAST[t.id]) drawThemeChart(t, THEME_LAST[t.id]); });
+  }, 250);
+});
 async function loadThemeChart(t){
   const wrap = document.getElementById('tcw-'+t.id), lg = document.getElementById('tcl-'+t.id);
   const want = chartSeries(t);
@@ -661,7 +682,8 @@ document.getElementById('reloadCharts').onclick = async function(){
   ALL_THEMES.forEach(t => {
     const w = document.getElementById('tcw-'+t.id);
     if (w) w.innerHTML = '<div class="skel"></div>';
-    if (themeCharts[t.id]){ themeCharts[t.id].destroy(); delete themeCharts[t.id]; }
+    if (themeCharts[t.id]){ delete themeCharts[t.id]; }
+    if (THEME_LAST[t.id]) delete THEME_LAST[t.id];
   });
   try { await loadAllThemeCharts(); } catch(e){ document.getElementById('chartStatus').textContent = '차트 불러오기 실패 — 잠시 후 재시도'; }
   btn.disabled = false;
@@ -781,14 +803,11 @@ async function doChart(tk){
   const st = document.getElementById('qStatus'); st.textContent = tk + ' 차트 불러오는 중…';
   try {
     const rows = await fetchPx(tk);
-    const labels = rows.map(r => r.d); const data = rows.map(r => r.c);
-    const wrap = document.getElementById('chartWrap'); wrap.style.display = 'block';
-    if (priceChart) priceChart.destroy();
-    priceChart = new Chart(document.getElementById('priceChart'), {
-      type: 'line',
-      data: { labels, datasets: [{ label: tk + ' 종가(원)', data, borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,.08)', fill: true, tension: .2, pointRadius: rows.length > 20 ? 0 : 3 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true } }, scales: { x: { ticks: { maxTicksLimit: 8 } } } }
-    });
+    const wrap = document.getElementById('chartWrap');
+    wrap.style.display = 'block';
+    drawSvgLine(wrap, rows.map(r => r.d),
+      [{ name: tk + ' 종가(원)', color:'#2563eb', v: rows.map(r => r.c) }],
+      { padL: 66, fill: true, yfmt: v => Math.round(v).toLocaleString('ko-KR') });
     st.textContent = '차트 완료 (' + rows.length + '거래일)';
   } catch(e) { st.textContent = '차트 실패 — 잠시 후 재시도'; }
 }
